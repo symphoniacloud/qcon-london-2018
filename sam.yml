@@ -2,12 +2,18 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: Serverless application infrastructure
 
+Parameters:
+
+  Timeout:
+    Type: Number
+    Default: "10"
+
 Globals:
 
   Function:
     Runtime: java8
-    MemorySize: 256
-    Timeout: 10
+    MemorySize: 3008
+    Timeout: !Ref Timeout
     AutoPublishAlias: live
 
 Resources:
@@ -17,6 +23,19 @@ Resources:
     Properties:
       Handler: io.symphonia.Lambda1::handler
       CodeUri: lambda1/target/lambda.jar
+      Environment:
+        Variables:
+          TIMEOUT_SECONDS: !Ref Timeout
+          PRODUCT_TABLE: !Ref Table1
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Table1
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
 
   Lambda2:
     Type: AWS::Serverless::Function
@@ -26,3 +45,10 @@ Resources:
 
   Table1:
     Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: productId
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 100
+        WriteCapacityUnits: 100
